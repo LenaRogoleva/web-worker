@@ -1,19 +1,15 @@
-const bc = new BroadcastChannel('test_channel');
-
-const slowFunction = (timeout = 3000) => {
-    let start = performance.now();
-    let x = 0;
-    let i = 0;
-    do {
-        i += 1;
-        x += (Math.random() - 0.5) * i;
-    } while (performance.now() - start < timeout);
-    return i;
-}
+let thread2;
 
 onmessage = (message) => {
     if (message.data === 'start') {
-        const result = slowFunction();
-        bc.postMessage(result);
+
+        if (!thread2) {
+           thread2 = new Worker('./thread2.js');
+            thread2.addEventListener('message', evt => {
+                const result = evt.data;
+                self.postMessage(result);
+            });
+        }
+        thread2.postMessage('start2');
     }
 }

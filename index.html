@@ -62,18 +62,16 @@
 <div id="result"></div>
 </body>
 <script>
-    const bc = new BroadcastChannel('test_channel');
     let thread;
-
-    bc.onmessage = (evt) => {
-        document.getElementById('result').innerHTML = evt.data;
-        // thread.terminate(); // прекращение существования воркера
-    };
 
     document.getElementById('start').addEventListener('click', () => {
         if (window.Worker) {
             if (!thread) {
                 thread = new Worker('./thread.js');
+                thread.addEventListener('message', evt => {
+                    document.getElementById('result').innerHTML = evt.data;
+                    // thread.terminate(); // прекращение существования воркера
+                });
             }
             thread.postMessage('start');
         }
