@@ -1,5 +1,3 @@
-const bc = new BroadcastChannel('test_channel');
-
 const slowFunction = (timeout = 3000) => {
     let start = performance.now();
     let x = 0;
@@ -12,8 +10,19 @@ const slowFunction = (timeout = 3000) => {
 }
 
 onmessage = (message) => {
-    if (message.data === 'start') {
+    const { type, stopMode } = message.data;
+    if (type !== 'start') {
+        return;
+    }
+
+    try {
         const result = slowFunction();
-        bc.postMessage(result);
+        self.postMessage({ type: 'result', data: result });
+    } catch (error) {
+        self.postMessage({ type: 'error', message: error.message });
+    } finally {
+        if (stopMode === 'close') {
+            self.close(); // воркер завершает сам себя
+        }
     }
 }
