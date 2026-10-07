@@ -1,13 +1,4 @@
-const slowFunction = (timeout = 3000) => {
-    let start = performance.now();
-    let x = 0;
-    let i = 0;
-    do {
-        i += 1;
-        x += (Math.random() - 0.5) * i;
-    } while (performance.now() - start < timeout);
-    return i;
-}
+let thread2;
 
 onmessage = (message) => {
     const { type, stopMode } = message.data;
@@ -15,14 +6,28 @@ onmessage = (message) => {
         return;
     }
 
-    try {
-        const result = slowFunction();
-        self.postMessage({ type: 'result', data: result });
-    } catch (error) {
-        self.postMessage({ type: 'error', message: error.message });
-    } finally {
-        if (stopMode === 'close') {
-            self.close(); // воркер завершает сам себя
-        }
+    if (!thread2) {
+        thread2 = new Worker('./thread2.js');
+    }
+
+    thread2.onmessage = (evt) => {
+        self.postMessage({ type: 'result', data: evt.data });
+        finish(stopMode);
+    };
+
+    thread2.onerror = (evt) => {
+        evt.preventDefault();
+        self.postMessage({ type: 'error', message: evt.message || 'ошибка во вложенном воркере' });
+        finish(stopMode);
+    };
+
+    thread2.postMessage('start2');
+}
+
+const finish = (stopMode) => {
+    if (stopMode === 'close') {
+        thread2.terminate();
+        thread2 = null;
+        self.close(); // воркер завершает сам себя
     }
 }
