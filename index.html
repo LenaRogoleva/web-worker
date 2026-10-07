@@ -62,19 +62,37 @@
 <div id="result"></div>
 </body>
 <script>
+    const startButton = document.getElementById('start');
+    const resultElement = document.getElementById('result');
     let thread;
 
-    document.getElementById('start').addEventListener('click', () => {
-        if (window.Worker) {
-            if (!thread) {
-                thread = new Worker('./thread.js');
-                thread.addEventListener('message', evt => {
-                    document.getElementById('result').innerHTML = evt.data;
-                    // thread.terminate(); // прекращение существования воркера
-                });
-            }
-            thread.postMessage('start');
+    const stopThread = () => {
+        thread.terminate(); // прекращение существования воркера
+        thread = null;
+        startButton.disabled = false;
+    };
+
+    startButton.addEventListener('click', () => {
+        if (!window.Worker) {
+            resultElement.textContent = 'Ошибка: Web Worker не поддерживается браузером';
+            return;
         }
+
+        startButton.disabled = true;
+        thread = new Worker('./thread.js');
+
+        thread.addEventListener('message', (evt) => {
+            resultElement.textContent = evt.data;
+            stopThread();
+        });
+
+        thread.addEventListener('error', (evt) => {
+            evt.preventDefault();
+            resultElement.textContent = `Ошибка: ${evt.message}`;
+            stopThread();
+        });
+
+        thread.postMessage('start');
     });
 </script>
 </html>
