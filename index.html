@@ -65,16 +65,18 @@
     let thread;
 
     document.getElementById('start').addEventListener('click', () => {
-        if (window.Worker) {
-            if (!thread) {
-                thread = new Worker('./thread.js');
-                thread.addEventListener('message', evt => {
-                    document.getElementById('result').innerHTML = evt.data;
-                    // thread.terminate(); // прекращение существования воркера
-                });
-            }
-            thread.postMessage('start');
+        if (!window.Worker) {
+            return;
         }
+
+        // воркер создаётся при первом нажатии, при повторных переиспользуется
+        if (!thread) {
+            thread = new Worker('./thread.js');
+            thread.addEventListener('message', evt => {
+                document.getElementById('result').textContent = evt.data;
+            });
+        }
+        thread.postMessage('start');
     });
 </script>
 </html>
