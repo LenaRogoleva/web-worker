@@ -62,57 +62,37 @@
 <div id="result"></div>
 </body>
 <script>
-    // Способ завершения воркера после получения результата:
-    // 'terminate' — основной поток вызывает thread.terminate()
-    // 'close' — воркер сам вызывает self.close()
-    const STOP_MODE = 'terminate';
-
     const startButton = document.getElementById('start');
     const resultElement = document.getElementById('result');
     let thread;
 
     const stopThread = () => {
-        if (STOP_MODE === 'terminate') {
-            thread.terminate(); // прекращение существования воркера
-        }
+        thread.terminate(); // прекращение существования воркера
         thread = null;
         startButton.disabled = false;
     };
 
-    const showError = (message) => {
-        resultElement.textContent = `Ошибка: ${message}`;
-    };
-
     startButton.addEventListener('click', () => {
         if (!window.Worker) {
-            showError('Web Worker не поддерживается браузером');
+            resultElement.textContent = 'Ошибка: Web Worker не поддерживается браузером';
             return;
         }
 
-        if (!thread) {
-            thread = new Worker('./thread.js');
-
-            thread.addEventListener('message', (evt) => {
-                const { type, data, message } = evt.data;
-                if (type === 'result') {
-                    resultElement.textContent = data;
-                } else if (type === 'error') {
-                    showError(message);
-                }
-                stopThread();
-            });
-
-            thread.addEventListener('error', (evt) => {
-                evt.preventDefault();
-                showError(evt.message || 'не удалось выполнить воркер');
-                thread.terminate();
-                thread = null;
-                startButton.disabled = false;
-            });
-        }
-
         startButton.disabled = true;
-        thread.postMessage({ type: 'start', stopMode: STOP_MODE });
+        thread = new Worker('./thread.js');
+
+        thread.addEventListener('message', (evt) => {
+            resultElement.textContent = evt.data;
+            stopThread();
+        });
+
+        thread.addEventListener('error', (evt) => {
+            evt.preventDefault();
+            resultElement.textContent = `Ошибка: ${evt.message}`;
+            stopThread();
+        });
+
+        thread.postMessage('start');
     });
 </script>
 </html>
