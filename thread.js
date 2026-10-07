@@ -1,15 +1,16 @@
-let thread2;
+const slowFunction = (timeout = 3000) => {
+    let start = performance.now();
+    let x = 0;
+    let i = 0;
+    do {
+        i += 1;
+        x += (Math.random() - 0.5) * i;
+    } while (performance.now() - start < timeout);
+    return i;
+}
 
 onmessage = (message) => {
     if (message.data === 'start') {
-
-        if (!thread2) {
-           thread2 = new Worker('./thread2.js');
-            thread2.addEventListener('message', evt => {
-                const result = evt.data;
-                self.postMessage(result);
-            });
-        }
-        thread2.postMessage('start2');
+        self.postMessage(slowFunction());
     }
 }
